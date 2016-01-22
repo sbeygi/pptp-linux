@@ -266,8 +266,11 @@ shutdown:
         for (i = 0; i < vector_size(call_list); i++) {
             PPTP_CALL *call = vector_get_Nth(call_list, i);
             struct local_callinfo *lci = pptp_call_closure_get(conn, call);
+			
             log("Closing connection (shutdown)");
-            pptp_call_close(conn, call);
+			/*SBeygi: before> pptp_call_close(conn, call); */
+            pptp_conn_close(conn, 3);
+			
             if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
             if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);
         }

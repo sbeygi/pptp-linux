@@ -174,7 +174,7 @@ static const char *pptp_start_ctrl_conn_rply[] = {
 
 /* timing options */
 int idle_wait = PPTP_TIMEOUT;
-int max_echo_wait = PPTP_TIMEOUT;
+int max_echo_wait = PPTP_ECHO_TIMEOUT;
 
 /* Local prototypes */
 static void pptp_reset_timer(void);
@@ -388,22 +388,37 @@ PPTP_CALL * pptp_call_open(PPTP_CONN * conn, pptp_call_cb callback,
 /*** pptp_call_close **********************************************************/
 void pptp_call_close(PPTP_CONN * conn, PPTP_CALL * call)
 {
+	//log("pptp_call_close: I was called!!!");
     struct pptp_call_clear_rqst rqst = {
         PPTP_HEADER_CTRL(PPTP_CALL_CLEAR_RQST), 0, 0
     };
+	
+	
+	/*struct pptp_stop_ctrl_conn_rqst rqst2 = {
+        PPTP_HEADER_CTRL(PPTP_STOP_CTRL_CONN_RQST), hton8(close_reason), 0, 0
+    };*/
+	
+	
     assert(conn && conn->call); assert(call);
     assert(vector_contains(conn->call, call->call_id));
     /* haven't thought about PAC yet */
     assert(call->call_type == PPTP_CALL_PNS);
     assert(call->state.pns != PNS_IDLE);
     rqst.call_id = hton16(call->call_id);
-    /* don't check state against WAIT_DISCONNECT... allow multiple disconnect
+	
+	/* don't check state against WAIT_DISCONNECT... allow multiple disconnect
      * requests to be made.
      */
     if (pptp_send_ctrl_packet(conn, &rqst, sizeof(rqst))) {
-        pptp_reset_timer();
+		pptp_reset_timer();
         call->state.pns = PNS_WAIT_DISCONNECT;
     }
+	
+	//log("pptp_call_close: how long??");
+	
+	/*pptp_send_ctrl_packet(conn, &rqst2, sizeof(rqst2));*/
+	/*pptp_conn_close(conn, PPTP_STOP_NONE);*/
+	
     /* call structure will be freed when we have confirmation of disconnect. */
 }
 
@@ -432,8 +447,9 @@ void pptp_conn_close(PPTP_CONN * conn, u_int8_t close_reason)
     if (conn->conn_state == CONN_IDLE || conn->conn_state == CONN_WAIT_STOP_REPLY) 
         return;
     /* close open calls, if any */
-    for (i = 0; i < vector_size(conn->call); i++)
-        pptp_call_close(conn, vector_get_Nth(conn->call, i));
+    /*for (i = 0; i < vector_size(conn->call); i++)
+        pptp_call_close(conn, vector_get_Nth(conn->call, i));*/
+	
     /* now close connection */
     log("Closing PPTP connection");
     if (pptp_send_ctrl_packet(conn, &rqst, sizeof(rqst))) {
