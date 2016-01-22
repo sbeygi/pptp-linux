@@ -270,6 +270,7 @@ shutdown:
             log("Closing connection (shutdown)");
 			/*SBeygi: before> pptp_call_close(conn, call); */
             pptp_conn_close(conn, 3);
+			pptp_conn_destroy(conn);
 			
             if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
             if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);

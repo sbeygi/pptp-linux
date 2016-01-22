@@ -52,6 +52,8 @@
 /* control the number of times echo packets will be logged */
 static int nlogecho = 10;
 
+static int echo_timmer = 0;
+
 static struct thread_specific {
     struct sigaction old_sigaction; /* evil signals */
     PPTP_CONN * conn;
@@ -1081,7 +1083,11 @@ static void pptp_reset_timer(void)
 /*** Handle keep-alive timer **************************************************/
 static void pptp_handle_timer(void)
 {
+	log("Time Tick Tack");
     int i;
+	
+	echo_timmer += idle_wait;
+	
     /* "Keep Alives and Timers, 1": check connection state */
     if (global.conn->conn_state != CONN_ESTABLISHED) {
         if (global.conn->conn_state == CONN_WAIT_STOP_REPLY) {
@@ -1092,6 +1098,14 @@ static void pptp_handle_timer(void)
         /* soft close */
         pptp_conn_close(global.conn, PPTP_STOP_NONE);
     }
+	
+	/*make sure to check for echo and call states every 60s*/
+	if(echo_timmer < 60){
+		return;
+	}else{
+		echo_timmer = 0;
+	}
+	
     /* "Keep Alives and Timers, 2": check echo status */
     if (global.conn->ka_state == KA_OUTSTANDING) {
         /* no response to keep-alive */
